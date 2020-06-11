@@ -1,0 +1,11 @@
+setup script to make new username + db then spit out password for now.  Makes setting up a new d8 site easier
+
+figure out a way to make spinnin up new doc roots with apache config easier
+-- that's vague.  be specific
+
+add a bashrc to git, make branches
+
+
+
+
+install 1 site manually
