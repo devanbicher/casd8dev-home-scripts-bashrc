@@ -1,7 +1,8 @@
 #ignore all folders
-./*/
+*/
 
 #also ignore all hidden folders
 .*
 !.gitignore
 !.bashrc
+!.drushrc

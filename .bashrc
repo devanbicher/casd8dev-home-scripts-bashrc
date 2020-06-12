@@ -1,3 +1,12 @@
+# Include Drush prompt customizations.
+. /home/dlb213/.drush/drush.prompt.sh
+
+# Include Drush completion.
+. /home/dlb213/.drush/drush.complete.sh
+
+# Include Drush bash customizations.
+. /home/dlb213/.drush/drush.bashrc
+
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
