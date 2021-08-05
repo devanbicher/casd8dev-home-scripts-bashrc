@@ -127,4 +127,115 @@ fi
 alias ll='ls -l'
 alias ebash='emacs ~/.bashrc && source ~/.bashrc'
 alias rmemacsbu='rm ./*.*~'
+alias sourcebash='source ~/.bashrc'
 alias python='python3'
+alias curdir='pwd | rev | cut -d '/' -f1 | rev'
+alias now="date +'%H%M-%m%d%y'"
+
+# general stuff (not drupal specific)
+cbash () {
+    code ~/.bashrc;
+    while true; do
+    read -p "Source your bash? [y/n]
+" yn
+    case $yn in
+        [Yy]* ) source ~/.bashrc; echo 'Successfully Sourced your bashrc'; break;;
+        [Nn]* ) echo "Okay, bashrc not sourced."; break;;
+        * ) echo "Please answer yes or no.";;
+    esac 
+    done
+    echo 'goodbye'
+}
+
+#drupal specific stuff
+alias drush-old='drush -l $(pwd | rev | cut -d "/" -f1 | rev)'
+#alias bam-backup='drush -l $(pwd | rev | cut -d "/" -f1 | rev) ev "backup_migrate_cron()"'
+
+export drupal8='/var/www/drupal8/web/sites/'
+export drupal9='/var/www/drupal9/web/sites/'
+export casdev='/var/www/casdev/web/sites/'
+export emulsify='/var/www/emulsify/web/sites/'
+export test_profile='/var/www/casdev/web/profiles/test_profile/'
+export test_profile_config='/var/www/casdev/web/profiles/test_profile/config/install/'
+export cas_dept='/var/www/casdev/web/profiles/cas_department/'
+export cas_dept_config='/var/www/casdev/web/profiles/cas_department/config/install/'
+
+profile_test_install () {
+drush @casdev."$1" site-install test_profile --account-name="$1"_cas_admin --account-mail=incasweb@lehigh.edu --site-mail=incasweb@lehigh.edu --account-pass=$(pwgen 16) --site-name="CASDEV $1 Site (casd8devserver)"
+}
+
+cas_department_install () {
+    #save the current path so I can return to it
+    curpath=$(pwd)
+    #make a commit of the config, in case there is somethig there you want.
+    cd /var/www/casdev/web/files/"$1"/config
+    git add ./*.yml
+    git commit -am "commit before exporting config again, before restoring to default profile."
+    #dump the config to make sure everthing from the site is exported and 'saved'
+    drush @casdev."$1" -y config:export 
+    git add ./*.yml
+    git commit -am "Most recent config for the site, BEFORE the site overwrite/install"
+    ### NOW install/overwrite the site.
+    drush @casdev."$1" site-install cas_department --account-name="$1"_cas_admin --account-mail=incasweb@lehigh.edu --site-mail=incasweb@lehigh.edu --account-pass=$(pwgen 16) --site-name="CASDEV $1 Site (casd8devserver)"
+    #export the config for the newly installed site.
+    drush @casdev."$1" -y config:export
+    git add ./*.yml
+    git commit -am "commit AFTER restoring to default profile."
+
+    cd $curpath
+}
+
+#drupal config tools
+cleanmvconfig (){
+    for config in "$@"
+    do
+	echo "Copying $config ... "
+	pcregrep -vM '_core:(.*\n)[[:space:]]+default_config_hash:' $config | grep -v "uuid" > /var/www/casdev/web/profiles/cas_department/config/install/"$config"
+    done
+}
+
+cleanmvconfigapply (){
+    for config in "$@"
+    do
+	echo "Copying $config ... "
+	pcregrep -vM '_core:(.*\n)[[:space:]]+default_config_hash:' $config | grep -v "uuid" > /var/www/casdev/web/sites/applynow/profiles/cas_department/config/install/"$config"
+    done
+}
+
+diff2profile () {
+
+    diff $1 /var/www/casdev/web/profiles/cas_department/config/install/"$1"
+}
+
+drushl () {
+    docroot=$(pwd | cut -d'/' -f4)
+
+    if [ "$docroot" = "casdev" ]; then
+        sitesdir=$(pwd | cut -d'/' -f6)
+
+        if [ "$sitesdir" = "sites" ]; then
+            site=$(pwd | cut -d'/' -f7)    
+            if [ "$site" != "" ]; then
+                drush -l $site $*
+            fi
+        else
+            echo "You aren't in the sites dir, you can just use drush, not this alias"
+        fi
+    else
+        echo "You aren't in casdev docroot (/var/www/casdev/), you should use drush aliases or drush -l to specify a site in this docroot"
+    fi
+}
+
+alias drushall="sh /var/www/casdev/web/scripts/bash-scripts/drushall.sh"
+
+site_backup () {
+    site=$(pwd | cut -d'/' -f7)
+    drushl sql:dump --result-file=files/"$site"/private/backup_migrate/"$site"-sh-$(date +'%H%M-%m%d%y').sql --gzip --structure-tables-list=cache_bootstrap,cache_config,cache_container,cache_data,cache_default,cache_discovery,cache_entity,cache_menu,cache_page,cache_toolbar,sessions
+}
+
+export compare2sites="/var/www/casdev/web/scripts/bash-scripts/compare2sites.sh"
+
+fixgroupperms () {
+    sudo chmod -R g+wrs $*
+    sudo chgrp -R drupaladm $*
+}

@@ -5,4 +5,11 @@
 .*
 !.gitignore
 !.bashrc
-!.drushrc
+
+#drush stuff
+!.drushrc  #.drushrc isn't there right now not sure if that is still used in drush 8+ it's here just in case
+!.drush/drush.bashrc
+!.drush/drushrc.php
+!.drush/drush.complete.sh
+!.drush/drush.prompt.sh
+
