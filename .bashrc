@@ -165,8 +165,15 @@ drush @casdev."$1" site-install test_profile --account-name="$1"_cas_admin --acc
 }
 
 cas_department_install () {
+    #you moved this to a script.  you should change this function to just call that script.
+
     #save the current path so I can return to it
     curpath=$(pwd)
+
+    #get the log 
+    cd /var/www/casdev/web/profiles/cas_department/
+    deptlog=$(git log -n1 --pretty='Department Install Profile Commit: %cn on %cD  Message: %s')\
+
     #make a commit of the config, in case there is somethig there you want.
     cd /var/www/casdev/web/files/"$1"/config
     git add ./*.yml
@@ -180,7 +187,7 @@ cas_department_install () {
     #export the config for the newly installed site.
     drush @casdev."$1" -y config:export
     git add ./*.yml
-    git commit -am "commit AFTER restoring to default profile."
+    git commit -am "AFTER Resetting to cas_department install profile:  $deptlog"
 
     cd $curpath
 }
@@ -207,6 +214,10 @@ diff2profile () {
     diff $1 /var/www/casdev/web/profiles/cas_department/config/install/"$1"
 }
 
+diff2base () {
+    diff $1 /var/www/casdev/web/sites/cas_department_base/files/config/"$1"
+}
+
 drushl () {
     docroot=$(pwd | cut -d'/' -f4)
 
@@ -227,6 +238,7 @@ drushl () {
 }
 
 alias drushall="sh /var/www/casdev/web/scripts/bash-scripts/drushall.sh"
+alias all_sites_backup="sh /var/www/casdev/web/scripts/bash-scripts/backupallsites.sh"
 
 site_backup () {
     site=$(pwd | cut -d'/' -f7)
@@ -234,6 +246,8 @@ site_backup () {
 }
 
 export compare2sites="/var/www/casdev/web/scripts/bash-scripts/compare2sites.sh"
+
+alias comparebase="sh /var/www/casdev/web/scripts/bash-scripts/compare2sites.sh cas_department_base "
 
 fixgroupperms () {
     sudo chmod -R g+wrs $*
