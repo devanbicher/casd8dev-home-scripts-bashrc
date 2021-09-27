@@ -25,8 +25,8 @@ HISTCONTROL=ignoreboth
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTSIZE=10000
+HISTFILESIZE=20000
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -120,11 +120,14 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+export EDITOR='emacs'
+export VISUAL='emacs'
 
-
-## my early stuff organize later
+# general stuff (not drupal specific)
+#aliases first
 
 alias ll='ls -l'
+alias ltr='ls -ltr'
 alias ebash='emacs ~/.bashrc && source ~/.bashrc'
 alias rmemacsbu='rm ./*.*~'
 alias sourcebash='source ~/.bashrc'
@@ -132,7 +135,6 @@ alias python='python3'
 alias curdir='pwd | rev | cut -d '/' -f1 | rev'
 alias now="date +'%H%M-%m%d%y'"
 
-# general stuff (not drupal specific)
 cbash () {
     code ~/.bashrc;
     while true; do
@@ -153,10 +155,16 @@ setgroup () {
     chgrp -R drupaladm $*
 }
 
-#drupal specific stuff
-alias drush-old='drush -l $(pwd | rev | cut -d "/" -f1 | rev)'
-#alias bam-backup='drush -l $(pwd | rev | cut -d "/" -f1 | rev) ev "backup_migrate_cron()"'
+#in case the above doesn't work, sudo it is.
+fixgroup () {
+    sudo chmod -R g+wrs $*
+    sudo chgrp -R drupaladm $*
+}
 
+
+#drupal specific stuff
+
+#variables first
 export drupal8='/var/www/drupal8/web/sites/'
 export drupal9='/var/www/drupal9/web/sites/'
 export casdev='/var/www/casdev/web/sites/'
@@ -165,27 +173,41 @@ export test_profile='/var/www/casdev/web/profiles/test_profile/'
 export test_profile_config='/var/www/casdev/web/profiles/test_profile/config/install/'
 export cas_dept='/var/www/casdev/web/profiles/cas_department/'
 export cas_dept_config='/var/www/casdev/web/profiles/cas_department/config/install/'
+export compare2sites="/var/www/casdev/web/scripts/bash-scripts/compare2sites.sh"
+export save_reinstall="scripts/php-scripts/save_entities_reinstall_site.php"
 
+
+#aliases
+alias drush-old='drush -l $(pwd | rev | cut -d "/" -f1 | rev)'
+#alias bam-backup='drush -l $(pwd | rev | cut -d "/" -f1 | rev) ev "backup_migrate_cron()"'
+alias cas_department_install="sh /var/www/casdev/web/scripts/bash-scripts/cas_department_install.sh"
+alias drushall="sh /var/www/casdev/web/scripts/bash-scripts/drushall.sh"
+alias all_sites_backup="sh /var/www/casdev/web/scripts/bash-scripts/backupallsites.sh"
+alias comparebase="sh /var/www/casdev/web/scripts/bash-scripts/compare2sites.sh cas_department_base "
+alias theme_logs="sh /var/www/casdev/web/scripts/bash-scripts/check_theme_logs.sh"
+alias profile_logs="sh /var/www/casdev/web/scripts/bash-scripts/check_profile_logs.sh"
+
+# functions
 profile_test_install () {
 drush @casdev."$1" site-install test_profile --account-name="$1"_cas_admin --account-mail=incasweb@lehigh.edu --site-mail=incasweb@lehigh.edu --account-pass=$(pwgen 16) --site-name="CASDEV $1 Site (casd8devserver)"
 }
-
-alias cas_department_install="sh /var/www/casdev/web/scripts/bash-scripts/cas_department_install.sh"
 
 #drupal config tools
 cleanmvconfig (){
     for config in "$@"
     do
 	echo "Copying $config ... "
-	pcregrep -vM '_core:(.*\n)[[:space:]]+default_config_hash:' $config | grep -v "uuid" > /var/www/casdev/web/profiles/cas_department/config/install/"$config"
+	pcregrep -vM '_core:(.*\n)[[:space:]]+default_config_hash:' $config | grep -v "uuid:" > /var/www/casdev/web/profiles/cas_department/config/install/"$config"
     done
 }
 
 cleanmvconfigdev (){
+    site=$1
+    shift
     for config in "$@"
     do
 	echo "Copying $config ... "
-	pcregrep -vM '_core:(.*\n)[[:space:]]+default_config_hash:' $config | grep -v "uuid" > /var/www/casdev/web/sites/newprofileinstall/profiles/cas_department/config/install/"$config"
+	pcregrep -vM '_core:(.*\n)[[:space:]]+default_config_hash:' $config | grep -v "uuid:" > /var/www/casdev/web/sites/"$site"/profiles/cas_department/config/install/"$config"
     done
 }
 
@@ -216,14 +238,7 @@ drushl () {
     fi
 }
 
-alias drushall="sh /var/www/casdev/web/scripts/bash-scripts/drushall.sh"
-alias all_sites_backup="sh /var/www/casdev/web/scripts/bash-scripts/backupallsites.sh"
-
 site_backup () {
     site=$(pwd | cut -d'/' -f7)
     drushl sql:dump --result-file=files/"$site"/private/backup_migrate/"$site"-sh-$(date +'%H%M-%m%d%y').sql --gzip --structure-tables-list=cache_bootstrap,cache_config,cache_container,cache_data,cache_default,cache_discovery,cache_entity,cache_menu,cache_page,cache_toolbar,sessions
 }
-
-export compare2sites="/var/www/casdev/web/scripts/bash-scripts/compare2sites.sh"
-
-alias comparebase="sh /var/www/casdev/web/scripts/bash-scripts/compare2sites.sh cas_department_base "

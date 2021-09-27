@@ -13,3 +13,6 @@
 !.drush/drush.complete.sh
 !.drush/drush.prompt.sh
 
+#don't ignore the scripts folder. I use that.
+!scripts/
+!scripts/*
