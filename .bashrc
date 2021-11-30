@@ -7,6 +7,9 @@
 # Include Drush bash customizations.
 . /home/dlb213/.drush/drush.bashrc
 
+#set file/directory creation permissions
+umask 002
+
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
@@ -134,6 +137,7 @@ alias sourcebash='source ~/.bashrc'
 alias python='python3'
 alias curdir='pwd | rev | cut -d '/' -f1 | rev'
 alias now="date +'%H%M-%m%d%y'"
+alias codebash="code ~/.bashrc"
 
 cbash () {
     code ~/.bashrc;
@@ -242,3 +246,21 @@ site_backup () {
     site=$(pwd | cut -d'/' -f7)
     drushl sql:dump --result-file=files/"$site"/private/backup_migrate/"$site"-sh-$(date +'%H%M-%m%d%y').sql --gzip --structure-tables-list=cache_bootstrap,cache_config,cache_container,cache_data,cache_default,cache_discovery,cache_entity,cache_menu,cache_page,cache_toolbar,sessions
 }
+
+modulemvconfig (){
+    site=$(pwd | cut -d'/' -f7)
+    module=$1
+    shift
+    for config in "$@"
+    do
+	    echo "Copying $config ... "
+	    pcregrep -vM '_core:(.*\n)[[:space:]]+default_config_hash:' $config | grep -v "uuid:" > /var/www/casdev/web/sites/"$site"/modules/"$module"/config/install/"$config"
+    done
+}
+
+## notes on some commands to run: 
+# to export a content type's config files via drupal console:  drupal --uri=cleanparagraphs.casdev.lehigh.edu config:export:content:type --remove-uuid --remove-config-hash --module=calendar_events_feeds simple_event
+# export some other entity:  drupal --uri=cleanparagraphs.casdev.lehigh.edu config:export:entity --remove-uuid --remove-config-hash --module=calendar_events_feeds feeds_feed_type lehigh_events_calendar_rss_feed
+
+# command to get the list of entity types on a site:
+# drushl eval "print_r(array_keys(\Drupal::entityTypeManager()->getDefinitions()));"
